@@ -1067,7 +1067,7 @@ https://github.com/guib1352/hiswarmth/blob/main/Cha1.webp|켠왕 끝!🎮이제 
 https://github.com/guib1352/hiswarmth/blob/main/Cha2.webp|짜증나 오늘 깰 수 있을줄|25년 11월 15일|sun_12>귀여워 ㅠ
 </script>
 
-<!-- 서이준 팔로잉에 숨겨둔 계정: 이현 -->
+<!-- 서이준 팔로워에 숨겨둔 계정: 이현 -->
 <script type="text/plain" id="feed-hyun">
 https://github.com/guib1352/hiswarmth/blob/main/H2.webp|오랜만에|25년 8월 28일|cho_12>계정 닫음?|tt_qwe>ㄱㄴㄲ 헤어지고 나가는건 맞는듯
 https://github.com/guib1352/hiswarmth/blob/main/H5.webp|촬영🌸|25년 7월 8일|cho_12>DM확인 좀 부탁드려요
@@ -1697,6 +1697,8 @@ https://github.com/guib1352/hiswarmth/blob/main/Seo9.webp|개빡셈|23년 3월 9
   document.getElementById("privateBack").addEventListener("click", () => {
     if(privateReturnSource === "talk"){
       show("talkRoomView");
+    }else if(privateReturnSource === "mainFollowers"){
+      openSocial("followers");
     }else{
       openSocial("following");
     }
@@ -2241,8 +2243,13 @@ https://github.com/guib1352/hiswarmth/blob/main/Seo9.webp|개빡셈|23년 3월 9
       list.appendChild(row);
     }
 
-    // 서이준/우도준 팔로잉 목록 최하단의 별도 계정
-    if(mode === "following" && privateAccounts[currentProfile]){
+    // 서이준의 이현 계정은 팔로워 목록에,
+    // 우도준의 준 계정은 기존처럼 팔로잉 목록에 표시
+    const showPrivateAccount =
+      (currentProfile === 2 && mode === "followers") ||
+      (currentProfile === 3 && mode === "following");
+
+    if(showPrivateAccount && privateAccounts[currentProfile]){
       const p = privateAccounts[currentProfile];
       const row = document.createElement("div");
       row.className = "social-row clickable";
@@ -2262,7 +2269,9 @@ https://github.com/guib1352/hiswarmth/blob/main/Seo9.webp|개빡셈|23년 3월 9
         followBtn.style.background = on ? "#0095f6" : "#efeff1";
         followBtn.style.color = on ? "#fff" : "#111";
       });
-      row.addEventListener("click", () => openPrivateProfile(currentProfile, "mainFollowing"));
+
+      const returnSource = currentProfile === 2 ? "mainFollowers" : "mainFollowing";
+      row.addEventListener("click", () => openPrivateProfile(currentProfile, returnSource));
       list.appendChild(row);
     }
 
