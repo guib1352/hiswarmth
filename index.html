@@ -1,0 +1,2274 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>남의 온도 — 인터랙티브 폰 테스트</title>
+<style>
+*{box-sizing:border-box}
+:root{
+  --ink:#111;
+  --sub:#8c8c92;
+  --line:#ececef;
+  --talk:#ffd86b;
+  --pix:#765fc5;
+  --blue:#3478f6;
+  --green:#34c759;
+}
+html,body{
+  margin:0;min-height:100%;
+  font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Noto Sans KR","Segoe UI",sans-serif;
+  background:#cfcfd2;color:var(--ink)
+}
+body{display:grid;place-items:center;padding:12px}
+button,input{font:inherit}
+button{cursor:pointer}
+.phone{
+  width:min(390px,100%);
+  aspect-ratio:390/844;
+  max-height:calc(100vh - 24px);
+  border-radius:42px;background:#101010;padding:9px;
+  box-shadow:0 24px 70px rgba(0,0,0,.3)
+}
+.screen{
+  height:100%;border-radius:34px;overflow:hidden;position:relative;background:#111
+}
+.wallpaper{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(circle at 75% 18%,rgba(255,255,255,.24),transparent 21%),
+    radial-gradient(circle at 22% 68%,rgba(255,255,255,.12),transparent 27%),
+    linear-gradient(160deg,#586275 0%,#29313d 45%,#161b22 100%)
+}
+.wallpaper:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.17))}
+.island{
+  position:absolute;z-index:90;top:10px;left:50%;transform:translateX(-50%);
+  width:102px;height:28px;border-radius:18px;background:#080808
+}
+.status{
+  position:absolute;z-index:80;left:0;right:0;top:0;height:48px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 18px;color:white;font-size:12px;font-weight:700;pointer-events:none
+}
+.home{
+  position:absolute;inset:0;z-index:5;padding:62px 14px 26px;
+  display:flex;flex-direction:column;color:white
+}
+.clock{text-align:center;margin:5px 0 21px;text-shadow:0 1px 8px rgba(0,0,0,.18)}
+.clock .time{
+  font-size:66px;
+  font-weight:250;
+  letter-spacing:-3px;
+  line-height:1;
+  display:flex;
+  align-items:center;
+  justify-content:center
+}
+.clock .time .clock-colon{
+  display:inline-block;
+  line-height:1;
+  transform:translateY(-2px);
+  margin:0 1px;
+  letter-spacing:-2px
+}
+.clock .date{font-size:14px;margin-top:7px;font-weight:600}
+.notifications{display:grid;gap:9px}
+.notification{
+  width:100%;border:0;color:white;background:rgba(30,30,34,.58);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-radius:18px;padding:11px 12px 12px;text-align:left;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 7px 25px rgba(0,0,0,.08)
+}
+.nhead{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.talk-mini{
+  width:24px;height:24px;border-radius:8px;background:var(--talk);color:#3a2b00;
+  display:grid;place-items:center;font-size:12px;font-weight:900
+}
+.appname{font-size:11px;font-weight:750;flex:1;color:rgba(255,255,255,.84)}
+.now{font-size:10px;color:rgba(255,255,255,.6)}
+.sender{font-size:13px;font-weight:800;margin-bottom:2px}
+.ntext{font-size:13px;line-height:1.35}
+.icons{
+  margin-top:auto;display:grid;grid-template-columns:repeat(4,1fr);
+  gap:16px 13px;padding:8px 5px 4px
+}
+.appicon{
+  border:0;background:transparent;color:white;padding:0;
+  display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10px;
+  text-shadow:0 1px 4px rgba(0,0,0,.35)
+}
+.appbox{
+  width:54px;height:54px;border-radius:14px;display:grid;place-items:center;
+  box-shadow:0 5px 14px rgba(0,0,0,.12);font-size:24px;text-shadow:none;font-weight:750
+}
+.talk-app{background:var(--talk);color:#3a2b00}
+.pix-app{color:white;background:linear-gradient(135deg,#5d6fd3,#8c5cc7 52%,#d46f92)}
+.notes-app{background:white;color:#e5b500}
+.camera-app{background:#d9d9de;color:#222}
+.dock{
+  margin:16px 4px 0;padding:10px 14px;border-radius:24px;
+  background:rgba(255,255,255,.16);backdrop-filter:blur(18px);
+  display:flex;justify-content:space-around
+}
+.dock button{border:0;background:transparent;padding:0}
+.dock .appbox{width:48px;height:48px;border-radius:13px}
+.phone-icon{background:#58c768;color:#fff}
+.sms-icon{background:#5a9cff;color:#fff}
+.browser-icon{background:#fff;color:#1591ff}
+.music-icon{background:#fff;color:#4075f4}
+
+.view{
+  position:absolute;inset:0;z-index:50;background:#fff;color:#111;
+  display:none;overflow:auto;padding-top:48px
+}
+.view.active{display:block}
+.app-header{
+  position:sticky;top:-48px;z-index:10;height:58px;
+  display:grid;grid-template-columns:44px 1fr 44px;align-items:center;
+  padding:0 8px;border-bottom:1px solid var(--line);
+  background:rgba(255,255,255,.97);backdrop-filter:blur(10px)
+}
+.app-header h1{font-size:16px;text-align:center;margin:0}
+.back,.home-btn{
+  border:0;background:transparent;color:#666;height:44px
+}
+.back{font-size:28px;text-align:left;padding:0 8px}
+.home-btn{font-size:18px}
+.section-title{font-size:28px;font-weight:800;letter-spacing:-1px;margin:20px 16px 8px}
+.soft-search{
+  margin:0 14px 10px;height:36px;border-radius:10px;background:#f1f1f4;
+  display:flex;align-items:center;padding:0 11px;color:#9a9aa0;font-size:13px
+}
+
+
+.secret-reply{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  margin:10px 0;
+}
+.secret-reply .chat-content{
+  max-width:82%;
+}
+.secret-links{
+  display:grid;
+  gap:7px;
+  margin-top:7px;
+}
+
+/* TalkTalk */
+.talk-list{padding:4px 12px 18px}
+.chat-card{
+  width:100%;border:0;background:#fff;display:grid;
+  grid-template-columns:50px 1fr auto;gap:11px;text-align:left;
+  padding:12px 4px;border-bottom:1px solid #f2f2f3
+}
+.avatar,.person-avatar{
+  border-radius:18px;background:linear-gradient(135deg,#777d89,#30343c);
+  color:#fff;display:grid;place-items:center;font-weight:800
+}
+.avatar{width:50px;height:50px}
+.chat-name{font-size:14px;font-weight:800;margin-bottom:4px}
+.chat-preview{font-size:12px;color:#777;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-meta{text-align:right;font-size:10px;color:#aaa;padding-top:2px}
+.unread{margin:7px 0 0 auto;width:18px;height:18px;border-radius:50%;background:#ff3b30;color:white;display:grid;place-items:center;font-size:10px}
+
+.chat-room{background:#b2c7d9;overflow:hidden}
+.chat-room .app-header{background:#b2c7d9;border-color:rgba(0,0,0,.06)}
+.room-shell{height:calc(100% - 58px);display:flex;flex-direction:column}
+.chat-scroll{flex:1;overflow:auto;padding:15px 12px 10px}
+.datechip{margin:0 auto 16px;width:max-content;padding:5px 9px;border-radius:12px;font-size:10px;background:rgba(0,0,0,.14);color:white}
+.chat-row{display:flex;align-items:flex-start;gap:8px;margin:10px 0}
+.chat-row.mine{justify-content:flex-end}
+.room-avatar{width:38px;height:38px;border-radius:14px;flex:none}
+.chat-content{max-width:78%}
+.chat-sender{font-size:11px;color:#3e4851;margin:0 0 4px 2px}
+.bubble{background:#fff;padding:9px 11px;border-radius:13px;font-size:13px;line-height:1.5;box-shadow:0 1px 1px rgba(0,0,0,.04)}
+.mine .bubble{background:#fff29a}
+.link-stack{display:grid;gap:7px;margin-top:9px}
+.pix-link{
+  border:0;width:100%;background:#fff;border-radius:12px;padding:8px;
+  display:flex;align-items:center;gap:9px;text-align:left;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.07)
+}
+.link-avatar{width:38px;height:38px;border-radius:50%;background:var(--g);flex:none}
+.link-copy{min-width:0;flex:1}
+.link-id{display:block;font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.link-sub{display:block;font-size:10px;color:#888;margin-top:2px}
+.link-arrow{color:#aaa;font-size:18px}
+.composer{padding:8px 9px 13px;background:rgba(255,255,255,.7);display:grid;grid-template-columns:1fr 42px;gap:7px}
+.composer input{border:0;outline:0;border-radius:20px;padding:0 13px;height:38px;background:#fff;font-size:13px}
+.send-btn{border:0;border-radius:50%;background:var(--talk);height:38px;width:38px;font-weight:800}
+
+/* Phone */
+.phone-tabs{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);position:sticky;bottom:0;background:#fff}
+.phone-tabs button{border:0;background:#fff;padding:9px 4px 12px;color:#888;font-size:10px}
+.phone-tabs button.active{color:var(--blue);font-weight:800}
+.phone-tab{display:none;padding-bottom:12px}.phone-tab.active{display:block}
+.contact-row{
+  width:100%;border:0;background:#fff;display:flex;align-items:center;gap:11px;
+  padding:11px 16px;text-align:left;border-bottom:1px solid #f3f3f4
+}
+.person-avatar{width:44px;height:44px;border-radius:50%}
+.contact-main{flex:1;min-width:0}.contact-main b{font-size:13px}.contact-main span{display:block;color:#888;font-size:11px;margin-top:2px}
+.call-small{font-size:21px;color:var(--blue)}
+.keypad-number{height:78px;display:grid;place-items:end center;padding-bottom:7px;font-size:26px;letter-spacing:.5px}
+.keypad{width:246px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:12px 16px}
+.key{border:0;width:60px;height:60px;border-radius:50%;background:#e9e9ec;font-size:24px;margin:auto}
+.key small{display:block;font-size:8px;letter-spacing:1px}
+.call-key{background:var(--green);color:#fff;font-size:25px}
+.delete-key{background:#fff;font-size:18px}
+.call-screen{
+  background:linear-gradient(180deg,#59616d,#1d2228);color:#fff;text-align:center;overflow:hidden
+}
+.calling{padding:100px 20px 0}
+.calling-avatar{width:92px;height:92px;border-radius:50%;margin:0 auto 18px;background:linear-gradient(135deg,#969ca6,#393e46);display:grid;place-items:center;font-size:32px;font-weight:800}
+.calling h2{margin:0;font-size:26px}.calling p{color:rgba(255,255,255,.7);font-size:13px}
+.call-actions{display:flex;justify-content:center;margin-top:140px}
+.end-call{border:0;width:66px;height:66px;border-radius:50%;background:#ff3b30;color:white;font-size:28px}
+
+/* SMS */
+.sms-list{padding:0 12px}
+.sms-row{
+  width:100%;border:0;background:#fff;display:grid;grid-template-columns:46px 1fr auto;
+  gap:10px;text-align:left;padding:11px 3px;border-bottom:1px solid #f2f2f3
+}
+.sms-avatar{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:#ddd;font-weight:800}
+.sms-name{font-size:13px;font-weight:800}.sms-preview{font-size:11px;color:#888;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sms-time{font-size:10px;color:#aaa}
+.sms-thread{overflow:hidden}
+.thread-shell{height:calc(100% - 58px);display:flex;flex-direction:column}
+.thread-scroll{flex:1;overflow:auto;padding:20px 14px}
+.sms-bubble{max-width:75%;padding:9px 11px;border-radius:17px;background:#e9e9ec;font-size:13px;line-height:1.4;margin:8px 0}
+.sms-bubble.me{margin-left:auto;background:#36c55f;color:#fff}
+.sms-compose{padding:8px 9px 13px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 42px;gap:7px}
+.sms-compose input{height:38px;border:1px solid #ddd;border-radius:20px;padding:0 13px;outline:0;font-size:13px}
+.sms-send{border:0;border-radius:50%;height:38px;width:38px;background:#36c55f;color:white;font-weight:800}
+
+
+/* Pixsta DM */
+.pix-dm-view{
+  overflow:hidden;
+}
+.pix-dm-shell{
+  height:calc(100% - 58px);
+  display:flex;
+  flex-direction:column;
+  background:#fff;
+}
+.pix-dm-profile{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 14px;
+  border-bottom:1px solid #f0f0f2;
+}
+.pix-dm-avatar{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  background:var(--g);
+  flex:none;
+}
+.pix-dm-profile b{
+  display:block;
+  font-size:12px;
+}
+.pix-dm-profile span{
+  display:block;
+  margin-top:2px;
+  font-size:10px;
+  color:#8d8d93;
+}
+.pix-dm-scroll{
+  flex:1;
+  overflow:auto;
+  padding:16px 12px;
+  background:#fff;
+}
+.pix-dm-bubble{
+  width:max-content;
+  max-width:76%;
+  margin:7px 0;
+  padding:9px 11px;
+  border-radius:18px;
+  background:#efeff2;
+  font-size:13px;
+  line-height:1.4;
+  word-break:break-word;
+}
+.pix-dm-bubble.me{
+  margin-left:auto;
+  background:#6c62d9;
+  color:#fff;
+}
+.pix-dm-time{
+  text-align:center;
+  color:#aaa;
+  font-size:9px;
+  margin:3px 0 12px;
+}
+.pix-dm-compose{
+  display:grid;
+  grid-template-columns:1fr 42px;
+  gap:7px;
+  padding:8px 9px 13px;
+  border-top:1px solid #ececef;
+  background:#fff;
+}
+.pix-dm-compose input{
+  height:38px;
+  border:1px solid #dddde1;
+  border-radius:20px;
+  padding:0 13px;
+  outline:0;
+  font-size:13px;
+}
+.pix-dm-send{
+  width:38px;
+  height:38px;
+  border:0;
+  border-radius:50%;
+  background:#6c62d9;
+  color:#fff;
+  font-weight:800;
+}
+
+/* Pixsta */
+.pix-home .app-header h1{font-family:Georgia,serif;font-style:italic;font-size:20px}
+.account-list{padding:8px 14px 20px}
+.account{
+  width:100%;border:0;background:#fff;display:flex;align-items:center;gap:11px;
+  padding:11px 0;text-align:left;border-bottom:1px solid #f3f3f4
+}
+.account-avatar{width:52px;height:52px;border-radius:50%;background:var(--g);flex:none}
+.account-main{min-width:0}.account-id{font-size:13px;font-weight:800}.account-name{font-size:11px;color:#8a8a8f;margin-top:2px}
+.view-btn{margin-left:auto;font-size:11px;font-weight:750;background:#efeff1;border-radius:7px;padding:7px 10px}
+.profile{padding:18px 15px 20px}
+.profile-top{display:flex;gap:18px;align-items:center}
+.profile-avatar{width:82px;height:82px;border-radius:50%;background:var(--g);flex:none}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;text-align:center;flex:1}
+.stat-btn{border:0;background:transparent;padding:4px 1px;color:#111}
+.stat-btn b{display:block;font-size:14px}.stat-btn span{font-size:10px}
+.bio{font-size:12px;line-height:1.5;padding:12px 0}.bio b{display:block}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.actions button{border:0;height:34px;border-radius:8px;font-weight:750}
+.follow{background:#6c62d9;color:white}.msgbtn{background:#efeff1}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin:12px -15px 0}
+.post{
+  aspect-ratio:1;
+  background:var(--p);
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  position:relative;
+  overflow:hidden;
+  border:0;
+  padding:0;
+  width:100%;
+  cursor:pointer;
+}
+.post:active{opacity:.78}
+
+.post-detail{padding-bottom:24px}
+.post-detail-head{
+  height:56px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 13px;
+  border-bottom:1px solid #f1f1f3
+}
+.post-detail-avatar{
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  background:var(--g);
+  flex:none
+}
+.post-detail-user{min-width:0;flex:1}
+.post-detail-user b{
+  display:block;
+  font-size:12px;
+  line-height:1.25
+}
+.post-detail-user span{
+  display:block;
+  color:#888;
+  font-size:10px;
+  margin-top:2px
+}
+.post-more{
+  border:0;
+  background:transparent;
+  font-weight:800;
+  letter-spacing:1px;
+  height:44px
+}
+.post-detail-image{
+  width:100%;
+  aspect-ratio:1/1;
+  background:var(--p);
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  position:relative;
+  overflow:hidden
+}
+.post-detail-image.liked:before{
+  content:"♥";
+  position:absolute;
+  z-index:2;
+  inset:0;
+  display:grid;
+  place-items:center;
+  color:#fff;
+  font-size:86px;
+  text-shadow:0 4px 18px rgba(0,0,0,.28);
+  animation:heartPop .55s ease both
+}
+@keyframes heartPop{
+  0%{opacity:0;transform:scale(.45)}
+  40%{opacity:1;transform:scale(1.15)}
+  100%{opacity:0;transform:scale(1)}
+}
+.post-detail-actions{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:8px 10px 2px
+}
+.post-detail-actions button{
+  border:0;
+  background:transparent;
+  width:40px;
+  height:40px;
+  padding:0;
+  font-size:27px;
+  line-height:1
+}
+.post-detail-actions .save-post{margin-left:auto}
+.post-detail-actions button.active{font-weight:900;color:#e54755}
+.post-detail-copy{
+  padding:0 13px;
+  font-size:12px;
+  line-height:1.55
+}
+.post-likes{font-weight:800;margin:2px 0 4px}
+.post-caption b{margin-right:3px}
+.comments-link{
+  display:block;
+  border:0;
+  background:transparent;
+  padding:4px 0;
+  color:#929298;
+  font-size:11px
+}
+.post-comments{
+  margin-top:4px;
+}
+.post-comment{
+  font-size:11px;
+  line-height:1.5;
+  margin:2px 0;
+}
+.post-comment b{
+  margin-right:4px;
+  font-weight:800;
+}
+.post-date{
+  color:#a0a0a6;
+  font-size:9px;
+  margin-top:5px
+}
+.social-list{padding:7px 14px}
+.social-row.clickable{
+  cursor:pointer;
+}
+.private-note{
+  margin:2px 0 12px;
+  padding:9px 10px;
+  background:#f5f5f7;
+  border-radius:9px;
+  color:#777;
+  font-size:11px;
+  font-weight:700;
+}
+.private-profile .grid{
+  margin-top:8px;
+}
+
+.social-row{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid #f4f4f5}
+.social-avatar{width:46px;height:46px;border-radius:50%;background:var(--g);flex:none}
+.social-copy{flex:1;min-width:0}.social-copy b{display:block;font-size:12px}.social-copy span{font-size:11px;color:#888}
+.social-follow{border:0;border-radius:7px;background:#0095f6;color:#fff;padding:7px 10px;font-size:11px;font-weight:750}
+
+.homebar{position:absolute;z-index:100;bottom:6px;left:50%;transform:translateX(-50%);width:120px;height:5px;border-radius:4px;background:rgba(255,255,255,.92)}
+.view.active ~ .homebar{background:#111}
+
+.push-notification{
+  opacity:0;
+  transform:translateY(-18px) scale(.985);
+  transition:opacity .34s ease,transform .34s cubic-bezier(.2,.8,.2,1);
+  pointer-events:none;
+}
+.push-notification.show-push{
+  opacity:1;
+  transform:translateY(0) scale(1);
+  pointer-events:auto;
+}
+.push-notification.hidden-push{
+  display:none;
+}
+.push-notification.dismiss-push{
+  opacity:0;
+  transform:translateY(-14px) scale(.985);
+}
+.global-push{
+  position:absolute;
+  z-index:120;
+  left:12px;
+  right:12px;
+  top:52px;
+  border:0;
+  color:#fff;
+  background:rgba(30,30,34,.82);
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+  border-radius:18px;
+  padding:11px 12px 12px;
+  text-align:left;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.09),0 10px 26px rgba(0,0,0,.18);
+  opacity:0;
+  transform:translateY(-18px) scale(.985);
+  pointer-events:none;
+  transition:opacity .34s ease,transform .34s cubic-bezier(.2,.8,.2,1);
+}
+.global-push.show{
+  opacity:1;
+  transform:translateY(0) scale(1);
+  pointer-events:auto;
+}
+.global-push.hide{
+  opacity:0;
+  transform:translateY(-16px) scale(.985);
+  pointer-events:none;
+}
+.staged-message{
+  animation:messageIn .25s ease both;
+}
+@keyframes messageIn{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+@media(max-width:340px){
+  .clock .time{font-size:58px}.notifications{gap:7px}.notification{padding:9px 10px}
+  .icons{gap:10px}.appbox{width:50px;height:50px}
+}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="screen">
+    <div class="wallpaper"></div>
+    <div class="island"></div>
+    <div class="status"><span>9:41</span><span>●●● 5G ▰</span></div>
+
+    <button type="button" class="global-push" id="globalPush1" aria-label="현우 형의 새 톡톡 메시지">
+      <div class="nhead">
+        <div class="talk-mini">T</div>
+        <div class="appname">톡톡</div>
+        <div class="now">지금</div>
+      </div>
+      <div class="sender">현우 형</div>
+      <div class="ntext">너 남의 온도 출연한다며?</div>
+    </button>
+
+    <button type="button" class="global-push" id="globalPush2" aria-label="현우 형의 새 톡톡 메시지">
+      <div class="nhead">
+        <div class="talk-mini">T</div>
+        <div class="appname">톡톡</div>
+        <div class="now">지금</div>
+      </div>
+      <div class="sender">현우 형</div>
+      <div class="ntext">출연진 미리 찾아놨음, 형님한테 감사해라</div>
+    </button>
+
+    <section class="home">
+      <div class="clock">
+        <div class="time"><span>9</span><span class="clock-colon">:</span><span>41</span></div>
+        <div class="date">8월 30일 일요일</div>
+      </div>
+
+      <div class="notifications" id="notifications">
+        <button type="button" class="notification push-notification hidden-push" id="push1" style="display:none">
+          <div class="nhead">
+            <div class="talk-mini">T</div>
+            <div class="appname">톡톡</div>
+            <div class="now">지금</div>
+          </div>
+          <div class="sender">현우 형</div>
+          <div class="ntext">너 남의 온도 출연한다며?</div>
+        </button>
+        <button type="button" class="notification push-notification hidden-push" id="push2" style="display:none">
+          <div class="nhead">
+            <div class="talk-mini">T</div>
+            <div class="appname">톡톡</div>
+            <div class="now">지금</div>
+          </div>
+          <div class="sender">현우 형</div>
+          <div class="ntext">출연진 미리 찾아놨음, 형님한테 감사해라</div>
+        </button>
+      </div>
+
+      <div class="icons">
+        <button type="button" class="appicon" id="openTalk">
+          <span class="appbox talk-app">T</span><span>톡톡</span>
+        </button>
+        <button type="button" class="appicon" id="openPixsta">
+          <span class="appbox pix-app">P</span><span>Pixsta</span>
+        </button>
+        <button type="button" class="appicon" disabled style="opacity:.72">
+          <span class="appbox notes-app">≡</span><span>메모</span>
+        </button>
+        <button type="button" class="appicon" disabled style="opacity:.72">
+          <span class="appbox camera-app">◉</span><span>카메라</span>
+        </button>
+      </div>
+
+      <div class="dock">
+        <button type="button" id="openPhone" aria-label="전화">
+          <span class="appbox phone-icon">☎</span>
+        </button>
+        <button type="button" id="openSms" aria-label="문자">
+          <span class="appbox sms-icon">✉</span>
+        </button>
+        <button type="button" disabled aria-label="브라우저">
+          <span class="appbox browser-icon">◎</span>
+        </button>
+        <button type="button" disabled aria-label="음악">
+          <span class="appbox music-icon">♫</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- TalkTalk conversation list -->
+    <section class="view" id="talkListView">
+      <div class="app-header">
+        <button type="button" class="back go-home">‹</button>
+        <h1>톡톡</h1>
+        <button type="button" class="home-btn go-home">⌂</button>
+      </div>
+      <div class="section-title">채팅</div>
+      <div class="soft-search">⌕ 대화 검색</div>
+      <div class="talk-list">
+        <button type="button" class="chat-card" id="openHyunwoo">
+          <div class="avatar">H</div>
+          <div>
+            <div class="chat-name">현우 형</div>
+            <div class="chat-preview">출연진 미리 찾아놨음, 형님한테 감사해라</div>
+          </div>
+          <div class="chat-meta">지금<div class="unread">2</div></div>
+        </button>
+        
+      </div>
+    </section>
+
+    <!-- TalkTalk room -->
+    <section class="view chat-room" id="talkRoomView">
+      <div class="app-header">
+        <button type="button" class="back" id="talkRoomBack">‹</button>
+        <h1>현우 형</h1>
+        <button type="button" class="home-btn go-home">⌂</button>
+      </div>
+      <div class="room-shell">
+        <div class="chat-scroll" id="talkScroll">
+          <div class="datechip">2026년 8월 30일</div>
+          <div class="chat-row">
+            <div class="room-avatar avatar">H</div>
+            <div class="chat-content">
+              <div class="chat-sender">현우 형</div>
+              <div class="bubble">너 남의 온도 출연한다며?</div>
+            </div>
+          </div>
+          <div class="chat-row staged-message" id="secondMessage" style="display:none">
+            <div class="room-avatar avatar">H</div>
+            <div class="chat-content">
+              <div class="chat-sender">현우 형</div>
+              <div class="bubble">
+                출연진 미리 찾아놨음, 형님한테 감사해라
+                <div class="link-stack" id="chatLinks"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <form class="composer" id="talkForm">
+          <input id="talkInput" maxlength="80" autocomplete="off" placeholder="메시지 입력">
+          <button class="send-btn" type="submit">↑</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Phone -->
+    <section class="view" id="phoneView">
+      <div class="app-header">
+        <button type="button" class="back go-home">‹</button>
+        <h1>전화</h1>
+        <button type="button" class="home-btn go-home">⌂</button>
+      </div>
+      <div class="phone-tab active" data-phone-tab="recent">
+        <div class="section-title">최근 통화</div>
+        <button type="button" class="contact-row quick-call" data-name="현우 형">
+          <div class="person-avatar">H</div>
+          <div class="contact-main"><b>현우 형</b><span>휴대전화 · 오늘 오후 8:12</span></div>
+          <div class="call-small">ⓘ</div>
+        </button>
+        <button type="button" class="contact-row quick-call" data-name="민서">
+          <div class="person-avatar" style="background:linear-gradient(135deg,#b78f83,#5b4540)">M</div>
+          <div class="contact-main"><b>민서</b><span>휴대전화 · 어제</span></div>
+          <div class="call-small">ⓘ</div>
+        </button>
+      </div>
+      <div class="phone-tab" data-phone-tab="contacts">
+        <div class="section-title">연락처</div>
+        <div class="soft-search">⌕ 이름 검색</div>
+        <button type="button" class="contact-row quick-call" data-name="현우 형">
+          <div class="person-avatar">H</div><div class="contact-main"><b>현우 형</b><span>010-0000-0001</span></div><div class="call-small">☎</div>
+        </button>
+        <button type="button" class="contact-row quick-call" data-name="민서">
+          <div class="person-avatar" style="background:linear-gradient(135deg,#b78f83,#5b4540)">M</div><div class="contact-main"><b>민서</b><span>010-0000-0002</span></div><div class="call-small">☎</div>
+        </button>
+      </div>
+      <div class="phone-tab" data-phone-tab="keypad">
+        <div class="keypad-number" id="dialNumber">번호 입력</div>
+        <div class="keypad" id="keypad">
+          <button type="button" class="key" data-key="1">1</button>
+          <button type="button" class="key" data-key="2">2<small>ABC</small></button>
+          <button type="button" class="key" data-key="3">3<small>DEF</small></button>
+          <button type="button" class="key" data-key="4">4<small>GHI</small></button>
+          <button type="button" class="key" data-key="5">5<small>JKL</small></button>
+          <button type="button" class="key" data-key="6">6<small>MNO</small></button>
+          <button type="button" class="key" data-key="7">7<small>PQRS</small></button>
+          <button type="button" class="key" data-key="8">8<small>TUV</small></button>
+          <button type="button" class="key" data-key="9">9<small>WXYZ</small></button>
+          <button type="button" class="key" data-key="*">*</button>
+          <button type="button" class="key" data-key="0">0<small>+</small></button>
+          <button type="button" class="key" data-key="#">#</button>
+          <span></span>
+          <button type="button" class="key call-key" id="dialCall">☎</button>
+          <button type="button" class="key delete-key" id="dialDelete">⌫</button>
+        </div>
+      </div>
+      <div class="phone-tabs">
+        <button type="button" class="active" data-switch-phone="recent">◷<br>최근 통화</button>
+        <button type="button" data-switch-phone="contacts">♙<br>연락처</button>
+        <button type="button" data-switch-phone="keypad">⊙<br>키패드</button>
+      </div>
+    </section>
+
+    <section class="view call-screen" id="callView">
+      <div class="calling">
+        <div class="calling-avatar" id="callingAvatar">H</div>
+        <h2 id="callingName">현우 형</h2>
+        <p id="callingState">연결 중…</p>
+        <div class="call-actions">
+          <button type="button" class="end-call" id="endCall">☎</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SMS -->
+    <section class="view" id="smsListView">
+      <div class="app-header">
+        <button type="button" class="back go-home">‹</button>
+        <h1>메시지</h1>
+        <button type="button" class="home-btn go-home">⌂</button>
+      </div>
+      <div class="section-title">메시지</div>
+      <div class="soft-search">⌕ 메시지 검색</div>
+      <div class="sms-list">
+        <button type="button" class="sms-row" id="openSmsHyunwoo">
+          <div class="sms-avatar">H</div>
+          <div><div class="sms-name">현우 형</div><div class="sms-preview">촬영 끝나고 연락해</div></div>
+          <div class="sms-time">21:12</div>
+        </button>
+        
+      </div>
+    </section>
+
+    <section class="view sms-thread" id="smsThreadView">
+      <div class="app-header">
+        <button type="button" class="back" id="smsBack">‹</button>
+        <h1>현우 형</h1>
+        <button type="button" class="home-btn go-home">⌂</button>
+      </div>
+      <div class="thread-shell">
+        <div class="thread-scroll" id="smsScroll">
+          <div class="sms-bubble">촬영 끝나고 연락해</div>
+          <div class="sms-bubble me">ㅇㅋ</div>
+        </div>
+        <form class="sms-compose" id="smsForm">
+          <input id="smsInput" maxlength="80" autocomplete="off" placeholder="문자 메시지">
+          <button type="submit" class="sms-send">↑</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Pixsta -->
+    <section class="view pix-home" id="pixView">
+      <div class="app-header">
+        <button type="button" class="back go-home">‹</button>
+        <h1>Pixsta</h1>
+        <button type="button" class="home-btn go-home">⌂</button>
+      </div>
+      <div class="account-list" id="accountList"></div>
+    </section>
+
+    <section class="view" id="profileView">
+      <div class="app-header">
+        <button type="button" class="back" id="profileBack">‹</button>
+        <h1 id="profileId"></h1>
+        <button type="button" class="home-btn go-home">⌂</button>
+      </div>
+      <div class="profile">
+        <div class="profile-top">
+          <div class="profile-avatar" id="profileAvatar"></div>
+          <div class="stats">
+            <button type="button" class="stat-btn" disabled><b id="postCount">0</b><span>게시물</span></button>
+            <button type="button" class="stat-btn" id="followersBtn"><b id="followers"></b><span>팔로워</span></button>
+            <button type="button" class="stat-btn" id="followingBtn"><b id="following"></b><span>팔로잉</span></button>
+          </div>
+        </div>
+        <div class="bio">
+          <b id="profileName"></b>
+          <span id="profileBio"></span><br>
+          <span style="color:#4d5f95">#남의온도</span>
+        </div>
+        <div class="actions">
+          <button type="button" class="follow" id="followBtn">팔로우</button>
+          <button type="button" class="msgbtn" id="pixMessageBtn">메시지</button>
+        </div>
+        <div class="grid" id="postGrid"></div>
+      </div>
+    </section>
+
+
+
+    <section class="view pix-dm-view" id="pixDmView">
+      <div class="app-header">
+        <button type="button" class="back" id="pixDmBack">‹</button>
+        <h1 id="pixDmHeader">메시지</h1>
+        <button type="button" class="home-btn go-home">⌂</button>
+      </div>
+
+      <div class="pix-dm-shell">
+        <div class="pix-dm-profile">
+          <div class="pix-dm-avatar" id="pixDmAvatar"></div>
+          <div>
+            <b id="pixDmName"></b>
+            <span id="pixDmId"></span>
+          </div>
+        </div>
+
+        <div class="pix-dm-scroll" id="pixDmScroll"></div>
+
+        <form class="pix-dm-compose" id="pixDmForm">
+          <input
+            id="pixDmInput"
+            maxlength="120"
+            autocomplete="off"
+            placeholder="메시지 보내기"
+          >
+          <button type="submit" class="pix-dm-send">↑</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="view" id="postView">
+      <div class="app-header">
+        <button type="button" class="back" id="postBack">‹</button>
+        <h1>게시물</h1>
+        <button type="button" class="home-btn go-home">⌂</button>
+      </div>
+      <div class="post-detail">
+        <div class="post-detail-head">
+          <div class="post-detail-avatar" id="postDetailAvatar"></div>
+          <div class="post-detail-user">
+            <b id="postDetailId"></b>
+            <span id="postDetailName"></span>
+          </div>
+          <button type="button" class="post-more">•••</button>
+        </div>
+
+        <div class="post-detail-image" id="postDetailImage"></div>
+
+        <div class="post-detail-actions">
+          <button type="button" id="postLikeBtn" aria-label="좋아요">♡</button>
+          <button type="button" aria-label="댓글">○</button>
+          <button type="button" aria-label="공유">⌁</button>
+          <button type="button" class="save-post" id="postSaveBtn" aria-label="저장">⌑</button>
+        </div>
+
+        <div class="post-detail-copy">
+          <div class="post-likes" id="postLikes">좋아요 1,284개</div>
+          <div class="post-caption"><b id="postCaptionId"></b> <span id="postCaptionText"></span></div>
+          <div class="post-comments" id="postComments"></div>
+          <div class="post-date" id="postDate">방금 전</div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="view" id="privateProfileView">
+      <div class="app-header">
+        <button type="button" class="back" id="privateBack">‹</button>
+        <h1 id="privateProfileId"></h1>
+        <button type="button" class="home-btn go-home">⌂</button>
+      </div>
+
+      <div class="profile private-profile">
+        <div class="profile-top">
+          <div class="profile-avatar" id="privateAvatar"></div>
+          <div class="stats">
+            <button type="button" class="stat-btn" disabled>
+              <b id="privatePostCount">3</b><span>게시물</span>
+            </button>
+            <button type="button" class="stat-btn" id="privateFollowersBtn">
+              <b id="privateFollowers">0</b><span>팔로워</span>
+            </button>
+            <button type="button" class="stat-btn" id="privateFollowingBtn">
+              <b id="privateFollowing">0</b><span>팔로잉</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bio">
+          <b id="privateName"></b>
+          <span id="privateBio"></span>
+        </div>
+
+        
+
+        <div class="grid" id="privatePostGrid"></div>
+      </div>
+    </section>
+
+    <section class="view" id="nestedProfileView">
+      <div class="app-header">
+        <button type="button" class="back" id="nestedBack">‹</button>
+        <h1 id="nestedProfileId"></h1>
+        <button type="button" class="home-btn go-home">⌂</button>
+      </div>
+      <div class="profile">
+        <div class="profile-top">
+          <div class="profile-avatar" id="nestedAvatar"></div>
+          <div class="stats">
+            <button type="button" class="stat-btn" disabled><b id="nestedPostCount">0</b><span>게시물</span></button>
+            <button type="button" class="stat-btn" disabled><b id="nestedFollowers">0</b><span>팔로워</span></button>
+            <button type="button" class="stat-btn" disabled><b id="nestedFollowing">0</b><span>팔로잉</span></button>
+          </div>
+        </div>
+        <div class="bio"><b id="nestedName"></b><span id="nestedBio"></span></div>
+        <div class="grid" id="nestedPostGrid"></div>
+      </div>
+    </section>
+
+    <section class="view" id="socialListView">
+      <div class="app-header">
+        <button type="button" class="back" id="socialBack">‹</button>
+        <h1 id="socialTitle">팔로워</h1>
+        <button type="button" class="home-btn go-home">⌂</button>
+      </div>
+      <div class="soft-search" style="margin-top:12px">⌕ 검색</div>
+      <div class="social-list" id="socialList"></div>
+    </section>
+
+    <div class="homebar"></div>
+  </div>
+</div>
+
+
+<!--
+  ==========================================================
+  PIXSTA 피드 직접 수정하는 곳
+
+  형식:
+  이미지주소 | 게시물 내용 | 시간표시 | 댓글1 | 댓글2
+
+  댓글 형식:
+  아이디>댓글내용
+
+  예:
+  https://github.com/아이디/저장소/blob/main/images/doyoon01.webp | 운동 끝 | 2시간 전 | friend01>오늘도 운동함? | sun_22>미쳤다
+  https://github.com/아이디/저장소/blob/main/images/doyoon02.webp | 수업 가기 싫다 | 8월 29일 | jaeho>ㅋㅋㅋㅋ |
+
+  규칙:
+  - 한 줄 = 게시물 1개
+  - 줄을 늘리면 피드 개수도 늘어남
+  - 줄을 지우면 피드 개수도 줄어듦
+  - 따옴표/쉼표 필요 없음
+  - 게시물 내용/시간표시/댓글은 비워도 됨
+  - 시간표시를 비우면 기본값은 "방금 전"
+  - 댓글은 최대 2개
+  - 댓글은 "아이디>내용" 형태로 입력
+  - GitHub blob 주소도 자동으로 Raw 주소로 변환
+  - 빈 줄은 무시
+  ==========================================================
+-->
+
+<script type="text/plain" id="feed-doyoon">
+https://github.com/guib1352/hiswarmth/blob/main/Do8.webp|선배님이 찍어주셨습니다.|26년 3월 9일
+https://github.com/guib1352/hiswarmth/blob/main/Do7.webp|오랜만에 쉬는 날, 쫑이랑🐶|25년 5월 5일
+https://github.com/guib1352/hiswarmth/blob/main/Do6.webp|항상 응원해주셔서 감사합니다.|25년 4월 12일
+https://github.com/guib1352/hiswarmth/blob/main/Do3.webp|수업 전|25년 3월 21일
+https://github.com/guib1352/hiswarmth/blob/main/Do5.webp|다리 힘 풀림|25년 3월 11일
+https://github.com/guib1352/hiswarmth/blob/main/Do2.webp|연말에도 운동|24년 12월 31일|su_300>우리 도운이.열시미.하는모습.보기 좋아~*^^*|doyoon.taek>감사합니다. 관장님
+https://github.com/guib1352/hiswarmth/blob/main/Do1.webp|운동끝|24년 10월 6일
+</script>
+
+<script type="text/plain" id="feed-jaeha">
+https://github.com/guib1352/hiswarmth/blob/main/Han%20(3).webp|곧 만나요|26년 7월 2일|dodo_66>배우님 게이임?|gngi_e>그남의 온도 나가는거 맞아요?
+https://github.com/guib1352/hiswarmth/blob/main/Han%20(1).webp|잠깐 쉬는 중|26년 3월 12일
+https://github.com/guib1352/hiswarmth/blob/main/Han%20(2).webp|오늘도 항상 감사합니다|26년 1월 25일
+https://github.com/guib1352/hiswarmth/blob/main/Han%20(4).webp|촬영 중|25년 10월 15일|rorol.ro>한복 고증 좀;
+https://github.com/guib1352/hiswarmth/blob/main/Han%20(5).webp|비 많이 오네요|25년 7월 15일
+https://github.com/guib1352/hiswarmth/blob/main/Han%20(6).webp|화보 촬영하고 왔습니다|25년 3월 9일
+</script>
+
+<script type="text/plain" id="feed-ijun">
+https://github.com/guib1352/hiswarmth/blob/main/Seo7.webp|정리겸 여행|26년 7월 10일
+https://github.com/guib1352/hiswarmth/blob/main/Seo8.webp|백스테이지|26년 5월 20일
+https://github.com/guib1352/hiswarmth/blob/main/Seo6.webp|B컷|26년 5월 18일
+https://github.com/guib1352/hiswarmth/blob/main/Seo4.webp|화보 B컷|26년 5월 1일
+https://github.com/guib1352/hiswarmth/blob/main/Seo3.webp|화보B컷2|26년 4월 11일
+https://github.com/guib1352/hiswarmth/blob/main/Seo2.webp|화보B컷|26년 4월 10일
+https://github.com/guib1352/hiswarmth/blob/main/Seo1.webp|new|26년 3월 9일
+</script>
+
+<script type="text/plain" id="feed-dojun">
+https://github.com/guib1352/hiswarmth/blob/main/Woo1.webp|오늘도 밖|26년 6월 23일
+https://github.com/guib1352/hiswarmth/blob/main/Woo14.webp|🌕|26년 5월 10일|son0_98>갑자기 감성적인척 하네|junm.888>애 상처받는다
+https://github.com/guib1352/hiswarmth/blob/main/Woo2.webp|어제|26년 5월 2일|6_6ss>ㅇㄷ?
+https://github.com/guib1352/hiswarmth/blob/main/Woo3.webp|오늘 개시|26년 4월 25일|6_6ss>바이크?
+https://github.com/guib1352/hiswarmth/blob/main/Woo4.webp|복잡하네|26년 2월 28일|6_6sss>안춥냐?|junm.888>점이랑 일부러 같은 쪽에 피어싱 한거임?
+https://github.com/guib1352/hiswarmth/blob/main/Woo5.webp|졸음운전 안돼|25년 12월 21일|6_6sss>개귀엽네|son0_98>바이크 언제 소개해줌
+https://github.com/guib1352/hiswarmth/blob/main/Woo6.webp|협찬👟|25년 10월 5일|tyty_777>ㅇㄷ|6_6sss>안쓰는거 나줘
+https://github.com/guib1352/hiswarmth/blob/main/Woo7.webp|저녁 드라이브|25년 9월 5일|qpqp_701>태워준다며 대체 언제 태워줘|6_6sss>포기하시는게 빠를듯
+</script>
+
+<script type="text/plain" id="feed-youmin">
+https://github.com/guib1352/hiswarmth/blob/main/Cha7.webp|이걸 못 깨네|26년 6월 20일|goo_go>허접ㅋ|youmin.gg>ㅈㄱㄹ?
+https://github.com/guib1352/hiswarmth/blob/main/Cha6.webp|오늘 방송 끝! 수고했어 다들! 내일 또 보자|26년 6월 12일|sunny_yoo>벌써 보고싶어ㅠ
+https://github.com/guib1352/hiswarmth/blob/main/Cha5.webp|뱅온🎮|26년 5월 8일
+https://github.com/guib1352/hiswarmth/blob/main/Cha4.webp|편집 중|26년 4월 10일
+https://github.com/guib1352/hiswarmth/blob/main/Cha3.webp|오늘 방송 8시 시작!|26년 3월 5일|sun_12>좀따봐!|yooo_m>오늘도 귀엽
+https://github.com/guib1352/hiswarmth/blob/main/Cha1.webp|켠왕 끝!🎮이제 진짜 잠!|25년 12월 12일
+https://github.com/guib1352/hiswarmth/blob/main/Cha2.webp|짜증나 오늘 깰 수 있을줄|25년 11월 15일|sun_12>귀여워 ㅠ
+</script>
+
+<!-- 서이준 팔로잉에 숨겨둔 계정: 이현 -->
+<script type="text/plain" id="feed-hyun">
+https://github.com/guib1352/hiswarmth/blob/main/H2.webp|오랜만에|25년 8월 28일|cho_12>계정 닫음?|tt_qwe>ㄱㄴㄲ 헤어지고 나가는건 맞는듯
+https://github.com/guib1352/hiswarmth/blob/main/H5.webp|촬영🌸|25년 7월 8일|cho_12>DM확인 좀 부탁드려요
+https://github.com/guib1352/hiswarmth/blob/main/H4.webp|촬영🌸|25년 7월 6일|cho_12>인스타 이제 안하시나요?|hhll_1111>님 전남친 그의 온도 나가는 거 암?
+https://github.com/guib1352/hiswarmth/blob/main/H3.webp|준이랑|23년 8월 9일|tpe_wek1>준이가 그 준이 말하는거?|sooso_85>ㅇㅇ맞음 근데 둘이 헤어짐
+https://github.com/guib1352/hiswarmth/blob/main/H1.webp|한번만 더 걸리면 죽는다 #mori.28|23년 7월 8일|chit_66>그거 받아주는 것도 니팔니꼰임|hyun.117>ㅗ
+https://github.com/guib1352/hiswarmth/blob/main/H6.webp|여행❤️#mori.28|23년 3월 5일|chit_66>헤어져놓고 왜 안내림?|hyun.117>ㅈ돼보라고
+</script>
+
+<!-- 우도준 팔로잉에 숨겨둔 계정: 준 -->
+<script type="text/plain" id="feed-juno">
+https://github.com/guib1352/hiswarmth/blob/main/Woo9.webp|잠안와|26년 7월 17일|klkl_990>↓너어는 나빴다. 내일 잘하고와|6_6sss>형님은 데이트 중
+https://github.com/guib1352/hiswarmth/blob/main/Woo10.webp|치즈냥|26년 7월 10일|klkl_990>ㅇㅈ|6_6sss>집에 데려가 어짜피 평생 혼자 살 것 같은데
+https://github.com/guib1352/hiswarmth/blob/main/Woo11.webp|못난이|26년 6월 5일
+https://github.com/guib1352/hiswarmth/blob/main/Woo12.webp|아프지마|26년 5월 5일|6_6sss>동네 고양이 니가 다 챙기네
+https://github.com/guib1352/hiswarmth/blob/main/Woo13.webp|ㅋㅋ다먹어ㅋㅋ|6_6sss>매일 밥주는사람도 경계하네
+https://github.com/guib1352/hiswarmth/blob/main/Woo8.webp|26일에 일어나기 실패|25년 12월 25일|6_6sss>왜그러고사냐|klkl_990>다음생에 연애할듯 얘는
+</script>
+
+<!-- 이현 팔로잉에 숨겨둔 계정: 모리 -->
+<script type="text/plain" id="feed-mori">
+https://github.com/guib1352/hiswarmth/blob/main/Seo13.webp|tlqkftlqkftlqkf|26년 7월 10일|tong_to>눈에 초점이 없네|gtogg.28>니같으면 있겠냐 ㅋㅋㅋㅋㅋㅋ
+https://github.com/guib1352/hiswarmth/blob/main/Seo10.webp|.|26년 6월 5일|gtogg.28>즐겁게사네|tong_to>즐겁겠냐?ㅋ
+https://github.com/guib1352/hiswarmth/blob/main/Seo11.webp|Tlqkf|26년 5월 9일|gtogg.28>뭔일?|tong_to>얘 게이연프나감ㅅㅂㅋㅋㅋㅋ
+https://github.com/guib1352/hiswarmth/blob/main/Seo12.webp|왈왈|23년 4월 22일|gtogg.28>그럴줄알았음|tong_to>현이가 니 봤다는데
+https://github.com/guib1352/hiswarmth/blob/main/Seo14.webp|술좀 그만 처먹자|23년 4월 15일|gtogg.38>개구라|tong_to>왈왈
+https://github.com/guib1352/hiswarmth/blob/main/Seo9.webp|개빡셈|23년 3월 9일|gtogg.38>가취가욥!|mori.28>ㅇ
+</script>
+
+<script>
+(() => {
+  function normalizeFeedUrl(url){
+    let v = String(url || "").trim();
+    if(!v) return "";
+
+    const githubBlob = v.match(
+      /^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)$/i
+    );
+    if(githubBlob){
+      const [, user, repo, branch, filePath] = githubBlob;
+      v = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/${filePath}`;
+    }
+
+    return v;
+  }
+
+  function parseEditableComment(value){
+    const raw = String(value || "").trim();
+    if(!raw) return null;
+
+    const divider = raw.indexOf(">");
+    if(divider === -1){
+      return {user:"user", text:raw};
+    }
+
+    const user = raw.slice(0, divider).trim() || "user";
+    const text = raw.slice(divider + 1).trim();
+
+    if(!text) return null;
+    return {user, text};
+  }
+
+  function readEditableFeed(elementId, fallbackPosts, fallbackCaptions, fallbackDates=[], fallbackComments=[]){
+    const source = document.getElementById(elementId);
+
+    if(!source){
+      return {
+        posts:[...fallbackPosts],
+        captions:[...fallbackCaptions],
+        dates:fallbackPosts.map((_,i) => fallbackDates[i] || "방금 전"),
+        comments:fallbackPosts.map((_,i) => fallbackComments[i] || [])
+      };
+    }
+
+    const rawLines = source.textContent
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(line => line && !line.startsWith("#"));
+
+    if(rawLines.length === 0){
+      return {
+        posts:[...fallbackPosts],
+        captions:[...fallbackCaptions],
+        dates:fallbackPosts.map((_,i) => fallbackDates[i] || "방금 전"),
+        comments:fallbackPosts.map((_,i) => fallbackComments[i] || [])
+      };
+    }
+
+    const posts = [];
+    const captions = [];
+    const dates = [];
+    const comments = [];
+
+    rawLines.slice(0,30).forEach(line => {
+      const parts = line.split("|");
+
+      const imagePart = (parts[0] || "").trim();
+      const captionPart = (parts[1] || "").trim();
+      const datePart = (parts[2] || "").trim();
+      const comment1 = parseEditableComment(parts[3] || "");
+      const comment2 = parseEditableComment(parts[4] || "");
+
+      const normalized = normalizeFeedUrl(imagePart);
+
+      if(normalized){
+        posts.push(normalized);
+        captions.push(captionPart);
+        dates.push(datePart || "방금 전");
+        comments.push([comment1, comment2].filter(Boolean));
+      }
+    });
+
+    return {posts,captions,dates,comments};
+  }
+
+  const accounts = [
+    {
+      id:"doyoon.taek",
+      name:"한도윤",
+      bio:"태권도 전공 🥋  운동 / 학교 / 오늘도 체육관",
+      followers:"684",
+      following:"612",
+      grad:"linear-gradient(135deg,#2f5f8f,#9fc7df)",
+      posts:[
+        "linear-gradient(135deg,#315a7a,#b8d4e5)",
+        "linear-gradient(135deg,#75899a,#243b50)",
+        "linear-gradient(135deg,#d0dbe2,#61788a)",
+        "linear-gradient(135deg,#4c6b57,#b7cbbd)",
+        "linear-gradient(135deg,#20384a,#7aa4bd)",
+        "linear-gradient(135deg,#d5d0c3,#7a7164)"
+      ],
+      captions:[
+        "운동 끝",
+        "수업 가기 싫다",
+        "오늘도 체육관",
+        "선배가 찍어줌",
+        "다리 풀림",
+        "오랜만에 쉬는 날"
+      ]
+    },
+    {
+      id:"jaeha.yoon",
+      name:"윤재하",
+      bio:"actor | scenes, days, and quiet moments",
+      followers:"18.6만",
+      following:"237",
+      grad:"linear-gradient(135deg,#4f4a46,#b8aaa0)",
+      posts:[
+        "linear-gradient(135deg,#2b2928,#8a7f77)",
+        "linear-gradient(135deg,#b7a89b,#514943)",
+        "linear-gradient(135deg,#d9d0c7,#6e645d)",
+        "linear-gradient(135deg,#45484e,#a9afb5)",
+        "linear-gradient(135deg,#907d6d,#d8c4b4)",
+        "linear-gradient(135deg,#242424,#777)"
+      ],
+      captions:[
+        "촬영 끝",
+        "비 많이 오네요",
+        "대기 중",
+        "오늘도 감사합니다",
+        "잠깐 쉬는 중",
+        "곧 봬요"
+      ]
+    },
+    {
+      id:"ijun.seo",
+      name:"서이준",
+      bio:"MODEL  |  SEOUL · TOKYO · PARIS",
+      followers:"34.2만",
+      following:"96",
+      grad:"linear-gradient(135deg,#d8d5cf,#5c5a57)",
+      posts:[
+        "linear-gradient(135deg,#ddd9d2,#55514b)",
+        "linear-gradient(135deg,#191919,#77736d)",
+        "linear-gradient(135deg,#bfb8ad,#f0ede7)",
+        "linear-gradient(135deg,#5f5b55,#c8c2b9)",
+        "linear-gradient(135deg,#e8e5df,#8e8a83)",
+        "linear-gradient(135deg,#242323,#b9b4ac)"
+      ],
+      captions:[
+        "paris",
+        "campaign",
+        "",
+        "backstage",
+        "seoul",
+        "new"
+      ]
+    },
+    {
+      id:"woodo",
+      name:"우도준",
+      bio:"daily / nightlife / collab ✉  재미없는 건 안 함",
+      followers:"52.7만",
+      following:"1,284",
+      grad:"linear-gradient(135deg,#51315e,#d06a8a)",
+      posts:[
+        "linear-gradient(135deg,#6a3347,#e48e9d)",
+        "linear-gradient(135deg,#261b29,#8d4d77)",
+        "linear-gradient(135deg,#d97a63,#42252d)",
+        "linear-gradient(135deg,#432b56,#a45c87)",
+        "linear-gradient(135deg,#111,#8a5360)",
+        "linear-gradient(135deg,#bd6d79,#32212a)"
+      ],
+      captions:[
+        "오늘도 밖",
+        "협찬",
+        "어제",
+        "재밌었음",
+        "답장 밀림",
+        "또 나옴"
+      ]
+    },
+    {
+      id:"youmin.gg",
+      name:"차유민",
+      bio:"게임 + 일상 🎮  영상은 주 3회쯤… 아마도",
+      followers:"27.9만",
+      following:"418",
+      grad:"linear-gradient(135deg,#9d8ed0,#e9c3d9)",
+      posts:[
+        "linear-gradient(135deg,#a89bd8,#e9d4f2)",
+        "linear-gradient(135deg,#76a6c7,#d4eef5)",
+        "linear-gradient(135deg,#f0c0c8,#b790bc)",
+        "linear-gradient(135deg,#b5d6a7,#e6f2dd)",
+        "linear-gradient(135deg,#f2dcae,#d3a6bb)",
+        "linear-gradient(135deg,#a6b9df,#dec9ed)"
+      ],
+      captions:[
+        "썸네일 뭐가 나음",
+        "이걸 못 깨네",
+        "편집 중",
+        "오늘 방송 끝",
+        "시간 순삭",
+        "이제 진짜 잠"
+      ]
+    }
+  ];
+
+  // 위 텍스트 블록에서 "이미지주소 | 캡션 | 시간표시 | 댓글1 | 댓글2" 형태로 피드를 자유롭게 구성
+  const editableFeedSources = [
+    ["feed-doyoon", 0],
+    ["feed-jaeha", 1],
+    ["feed-ijun", 2],
+    ["feed-dojun", 3],
+    ["feed-youmin", 4]
+  ];
+
+  editableFeedSources.forEach(([elementId, accountIndex]) => {
+    const account = accounts[accountIndex];
+    const edited = readEditableFeed(
+      elementId,
+      account.posts,
+      account.captions,
+      account.dates || [],
+      account.comments || []
+    );
+
+    account.posts = edited.posts;
+    account.captions = edited.captions;
+    account.dates = edited.dates;
+    account.comments = edited.comments;
+  });
+
+  const socialPool = [
+    {id:"haeun.mov",name:"하은",grad:"linear-gradient(135deg,#d7a8a8,#875c67)"},
+    {id:"jun_park",name:"준",grad:"linear-gradient(135deg,#8190a8,#3c4658)"},
+    {id:"mxxn.archive",name:"문",grad:"linear-gradient(135deg,#c5af94,#6f5b49)"},
+    {id:"doyeon.jpeg",name:"도연",grad:"linear-gradient(135deg,#b28da7,#5f4659)"},
+    {id:"0h_sun",name:"오선",grad:"linear-gradient(135deg,#9db3a4,#4b6251)"},
+    {id:"chan.room",name:"찬",grad:"linear-gradient(135deg,#9c9c9c,#434343)"},
+    {id:"sena.log",name:"세나",grad:"linear-gradient(135deg,#d4b7a0,#7d5d49)"}
+  ];
+
+  const privateAccounts = {
+    2: {
+      id:"hyun.117",
+      name:"이현",
+      bio:"사진 / 서울",
+      followers:"386",
+      following:"241",
+      grad:"linear-gradient(135deg,#77736f,#272625)",
+      posts:[
+        "linear-gradient(135deg,#393735,#aaa49c)",
+        "linear-gradient(135deg,#1f1f1f,#5a5752)",
+        "linear-gradient(135deg,#8a837c,#d0cbc4)"
+      ],
+      captions:[
+        "",
+        "",
+        ""
+      ]
+    },
+    3: {
+      id:"juno.404",
+      name:"준",
+      bio:"daily",
+      followers:"1",
+      following:"1",
+      grad:"linear-gradient(135deg,#6a405c,#251a23)",
+      posts:[
+        "linear-gradient(135deg,#241920,#7b485f)",
+        "linear-gradient(135deg,#7f4c58,#20181d)",
+        "linear-gradient(135deg,#4a2b3c,#aa687b)"
+      ],
+      captions:[
+        "",
+        "",
+        ""
+      ]
+    }
+  };
+
+  const nestedPrivateAccounts = {
+    2: {
+      id:"mori.28",
+      name:"모리",
+      bio:"photo / music",
+      followers:"214",
+      following:"188",
+      grad:"linear-gradient(135deg,#6f7d86,#2e363b)",
+      posts:[
+        "linear-gradient(135deg,#52636c,#b7c4ca)",
+        "linear-gradient(135deg,#2f383d,#7d8d94)",
+        "linear-gradient(135deg,#9a948d,#4d4843)",
+        "linear-gradient(135deg,#4e5960,#c3cbd0)"
+      ],
+      captions:[
+        "",
+        "",
+        "",
+        ""
+      ]
+    }
+  };
+
+  // 숨겨둔 계정들도 위 텍스트 블록에서 피드 개수/이미지/캡션/시간표시/댓글을 직접 수정
+  [
+    ["feed-hyun", privateAccounts[2]],
+    ["feed-juno", privateAccounts[3]],
+    ["feed-mori", nestedPrivateAccounts[2]]
+  ].forEach(([elementId, account]) => {
+    const edited = readEditableFeed(
+      elementId,
+      account.posts,
+      account.captions,
+      account.dates || [],
+      account.comments || []
+    );
+
+    account.posts = edited.posts;
+    account.captions = edited.captions;
+    account.dates = edited.dates;
+    account.comments = edited.comments;
+  });
+
+  const views = [
+    "talkListView","talkRoomView","phoneView","callView",
+    "smsListView","smsThreadView","pixView","profileView","socialListView","postView","privateProfileView","nestedProfileView","pixDmView"
+  ].map(id => document.getElementById(id));
+
+  let currentProfile = 0;
+  let socialMode = "followers";
+  let dial = "";
+  let callTimer = null;
+
+  let stage = 1;
+  let secondTimer = null;
+
+  function hideViews(){ views.forEach(v => v.classList.remove("active")); }
+  function show(id){ hideViews(); document.getElementById(id).classList.add("active"); }
+
+  function showPush(el){
+    el.classList.remove("hidden-push","dismiss-push");
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add("show-push")));
+  }
+
+  function dismissPush(el){
+    el.classList.remove("show-push");
+    el.classList.add("dismiss-push");
+    setTimeout(() => el.classList.add("hidden-push"), 320);
+  }
+
+  function showGlobalSecondPush(){
+    const banner = document.getElementById("globalPush2");
+    banner.classList.remove("hide");
+    requestAnimationFrame(() => requestAnimationFrame(() => banner.classList.add("show")));
+  }
+
+  function hideGlobalSecondPush(){
+    const banner = document.getElementById("globalPush2");
+    banner.classList.remove("show");
+    banner.classList.add("hide");
+  }
+
+  function deliverSecondMessage(){
+    if(stage >= 3) return;
+    stage = 3;
+
+    const secondMessage = document.getElementById("secondMessage");
+    secondMessage.style.display = "flex";
+
+    // 채팅방 안에 있으면 새 메시지가 바로 보이도록 스크롤
+    if(document.getElementById("talkRoomView").classList.contains("active")){
+      setTimeout(() => {
+        const s = document.getElementById("talkScroll");
+        s.scrollTop = s.scrollHeight;
+      }, 40);
+    }
+
+    // 어떤 화면에 있든 실제 푸시처럼 상단에 표시
+    showGlobalSecondPush();
+
+    // 채팅 목록 미리보기도 두 번째 메시지로 유지
+    const preview = document.querySelector("#openHyunwoo .chat-preview");
+    if(preview) preview.textContent = "출연진 미리 찾아놨음, 형님한테 감사해라";
+  }
+
+  function scheduleSecondMessage(){
+    // 자동 배너 흐름 사용
+  }
+
+  function goHome(){
+    hideViews();
+    if(callTimer){clearTimeout(callTimer);callTimer=null;}
+  }
+
+  document.querySelectorAll(".go-home").forEach(b => b.addEventListener("click", goHome));
+
+  // TalkTalk staged push flow
+  const push1 = document.getElementById("push1");
+  const secondMessage = document.getElementById("secondMessage");
+  const globalPush2 = document.getElementById("globalPush2");
+
+  // 요즘 휴대폰 배너 알림처럼 자동으로 나타났다가 사라지는 흐름
+  const globalPush1 = document.getElementById("globalPush1");
+
+  function flashBanner(el, showAt, stayFor){
+    setTimeout(() => {
+      el.classList.remove("hide");
+      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add("show")));
+
+      setTimeout(() => {
+        el.classList.remove("show");
+        el.classList.add("hide");
+      }, stayFor);
+    }, showAt);
+  }
+
+  // 첫 메시지는 먼저 채팅 기록에 존재
+  stage = 2;
+
+  // 0.3초: 첫 알림 등장 → 약 0.75초 후 자동 퇴장
+  flashBanner(globalPush1, 300, 750);
+
+  // 1.2초: 두 번째 메시지 실제 도착 + 알림 등장
+  setTimeout(() => {
+    deliverSecondMessage();
+    const banner = document.getElementById("globalPush2");
+    setTimeout(() => {
+      banner.classList.remove("show");
+      banner.classList.add("hide");
+    }, 750);
+  }, 1200);
+
+  globalPush1.addEventListener("click", () => {
+    globalPush1.classList.remove("show");
+    globalPush1.classList.add("hide");
+    secondMessage.style.display = stage >= 3 ? "flex" : "none";
+    show("talkRoomView");
+  });
+
+  globalPush2.addEventListener("click", () => {
+    hideGlobalSecondPush();
+    secondMessage.style.display = "flex";
+    show("talkRoomView");
+    setTimeout(() => {
+      const s = document.getElementById("talkScroll");
+      s.scrollTop = s.scrollHeight;
+    }, 30);
+  });
+
+  document.getElementById("openTalk").addEventListener("click", () => show("talkListView"));
+  document.getElementById("openHyunwoo").addEventListener("click", () => {
+    secondMessage.style.display = stage >= 3 ? "flex" : "none";
+    show("talkRoomView");
+  });
+  document.getElementById("talkRoomBack").addEventListener("click", () => {
+    show("talkListView");
+  });
+
+  const talkScroll = document.getElementById("talkScroll");
+  document.getElementById("talkForm").addEventListener("submit", e => {
+    e.preventDefault();
+
+    const input = document.getElementById("talkInput");
+    const value = input.value.trim();
+    if(!value) return;
+
+    // 사용자가 보낸 메시지는 우선 정상적으로 채팅방에 표시
+    const row = document.createElement("div");
+    row.className = "chat-row mine";
+    row.innerHTML = '<div class="chat-content"><div class="bubble"></div></div>';
+    row.querySelector(".bubble").textContent = value;
+    talkScroll.appendChild(row);
+
+    input.value = "";
+    talkScroll.scrollTop = talkScroll.scrollHeight;
+
+    // 숨겨진 기믹 코드
+    if(value === "117404"){
+      const sendSecretReply = (textValue, linkButton, delay) => {
+        setTimeout(() => {
+          const reply = document.createElement("div");
+          reply.className = "secret-reply";
+
+          const avatar = document.createElement("div");
+          avatar.className = "room-avatar avatar";
+          avatar.textContent = "H";
+
+          const content = document.createElement("div");
+          content.className = "chat-content";
+
+          const sender = document.createElement("div");
+          sender.className = "chat-sender";
+          sender.textContent = "현우 형";
+
+          const bubble = document.createElement("div");
+          bubble.className = "bubble";
+
+          const text = document.createElement("div");
+          text.textContent = textValue;
+
+          bubble.appendChild(text);
+
+          if(linkButton){
+            const links = document.createElement("div");
+            links.className = "secret-links";
+            links.appendChild(linkButton);
+            bubble.appendChild(links);
+          }
+
+          content.appendChild(sender);
+          content.appendChild(bubble);
+          reply.appendChild(avatar);
+          reply.appendChild(content);
+          talkScroll.appendChild(reply);
+          talkScroll.scrollTop = talkScroll.scrollHeight;
+        }, delay);
+      };
+
+      // 1) 이현 쪽에서 한 번 더 들어가는 모리 계정
+      sendSecretReply(
+        "야 얘 뒷계정 찾았어, 조심해",
+        nestedAccountLink(2),
+        300
+      );
+
+      // 2) 뒤이어 우도준 쪽 juno 계정
+      sendSecretReply(
+        "찾다가 이것도 찾음 ㅋㅋ",
+        alternateAccountLink(3),
+        850
+      );
+    }
+  });
+
+  // Phone
+  document.getElementById("openPhone").addEventListener("click", () => show("phoneView"));
+  document.querySelectorAll("[data-switch-phone]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const target = btn.dataset.switchPhone;
+      document.querySelectorAll(".phone-tab").forEach(t => t.classList.toggle("active", t.dataset.phoneTab === target));
+      document.querySelectorAll("[data-switch-phone]").forEach(b => b.classList.toggle("active", b === btn));
+    });
+  });
+  document.querySelectorAll("[data-key]").forEach(btn => btn.addEventListener("click", () => {
+    if(dial.length >= 16) return;
+    dial += btn.dataset.key;
+    document.getElementById("dialNumber").textContent = dial;
+  }));
+  document.getElementById("dialDelete").addEventListener("click", () => {
+    dial = dial.slice(0,-1);
+    document.getElementById("dialNumber").textContent = dial || "번호 입력";
+  });
+  function startCall(name){
+    document.getElementById("callingName").textContent = name;
+    document.getElementById("callingAvatar").textContent = (name[0] || "#").toUpperCase();
+    document.getElementById("callingState").textContent = "연결 중…";
+    show("callView");
+    if(callTimer) clearTimeout(callTimer);
+    callTimer = setTimeout(() => {
+      document.getElementById("callingState").textContent = "통화 중 00:01";
+    },1200);
+  }
+  document.querySelectorAll(".quick-call").forEach(b => b.addEventListener("click", () => startCall(b.dataset.name)));
+  document.getElementById("dialCall").addEventListener("click", () => {
+    if(!dial) return;
+    startCall(dial);
+  });
+  document.getElementById("endCall").addEventListener("click", () => {
+    if(callTimer) clearTimeout(callTimer);
+    callTimer = null;
+    show("phoneView");
+  });
+
+  // SMS
+  document.getElementById("openSms").addEventListener("click", () => show("smsListView"));
+  document.getElementById("openSmsHyunwoo").addEventListener("click", () => show("smsThreadView"));
+  document.getElementById("smsBack").addEventListener("click", () => show("smsListView"));
+  const smsScroll = document.getElementById("smsScroll");
+  document.getElementById("smsForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const input = document.getElementById("smsInput");
+    const value = input.value.trim();
+    if(!value) return;
+    const msg = document.createElement("div");
+    msg.className = "sms-bubble me";
+    msg.textContent = value;
+    smsScroll.appendChild(msg);
+    input.value = "";
+    smsScroll.scrollTop = smsScroll.scrollHeight;
+  });
+
+  // Pixsta
+  document.getElementById("openPixsta").addEventListener("click", () => show("pixView"));
+  document.getElementById("profileBack").addEventListener("click", () => show("pixView"));
+  document.getElementById("privateBack").addEventListener("click", () => {
+    if(privateReturnSource === "talk"){
+      show("talkRoomView");
+    }else{
+      openSocial("following");
+    }
+  });
+
+  document.getElementById("privateFollowersBtn").addEventListener("click", () => openAltSocial("followers"));
+  document.getElementById("privateFollowingBtn").addEventListener("click", () => openAltSocial("following"));
+
+  document.getElementById("nestedBack").addEventListener("click", () => {
+    if(nestedReturnSource === "talk"){
+      show("talkRoomView");
+    }else{
+      openAltSocial("following");
+    }
+  });
+
+
+  function nestedAccountLink(ownerIndex){
+    const a = nestedPrivateAccounts[ownerIndex];
+    if(!a) return null;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "pix-link";
+    btn.innerHTML = `
+      <span class="link-avatar" style="--g:${a.grad}"></span>
+      <span class="link-copy">
+        <span class="link-id">${a.id}</span>
+        <span class="link-sub">Pixsta 프로필 보기</span>
+      </span>
+      <span class="link-arrow">›</span>
+    `;
+    btn.addEventListener("click", () => openNestedProfile(ownerIndex, "talk"));
+    return btn;
+  }
+
+  function alternateAccountLink(ownerIndex){
+    const a = privateAccounts[ownerIndex];
+    if(!a) return null;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "pix-link";
+    btn.innerHTML = `
+      <span class="link-avatar" style="--g:${a.grad}"></span>
+      <span class="link-copy">
+        <span class="link-id">${a.id}</span>
+        <span class="link-sub">Pixsta 프로필 보기</span>
+      </span>
+      <span class="link-arrow">›</span>
+    `;
+    btn.addEventListener("click", () => openPrivateProfile(ownerIndex, "talk"));
+    return btn;
+  }
+
+  function accountButton(index,compact=false){
+    const a = accounts[index];
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = compact ? "pix-link" : "account";
+    btn.addEventListener("click", () => openProfile(index));
+    if(compact){
+      btn.innerHTML = `
+        <span class="link-avatar" style="--g:${a.grad}"></span>
+        <span class="link-copy"><span class="link-id">${a.id}</span><span class="link-sub">Pixsta 프로필 보기</span></span>
+        <span class="link-arrow">›</span>`;
+    }else{
+      btn.innerHTML = `
+        <span class="account-avatar" style="--g:${a.grad}"></span>
+        <span class="account-main"><span class="account-id">${a.id}</span><br><span class="account-name">${a.name}</span></span>
+        <span class="view-btn">보기</span>`;
+    }
+    return btn;
+  }
+
+  accounts.forEach((_,i) => {
+    document.getElementById("chatLinks").appendChild(accountButton(i,true));
+    document.getElementById("accountList").appendChild(accountButton(i,false));
+  });
+
+  function applyPostVisual(el, value){
+    const v = String(value || "").trim();
+    const isImage =
+      /^https?:\/\//i.test(v) ||
+      /^images\//i.test(v) ||
+      /^\.\.?\//.test(v) ||
+      /\.(png|jpe?g|webp|gif|avif)(\?.*)?$/i.test(v);
+
+    if(isImage){
+      const safe = v.replace(/"/g, '\\"');
+      el.style.backgroundImage = `url("${safe}")`;
+      el.style.backgroundColor = "#ddd";
+      el.style.removeProperty("--p");
+    }else{
+      el.style.backgroundImage = "";
+      el.style.setProperty("--p", v || "#ddd");
+    }
+  }
+
+  function openProfile(index){
+    currentProfile = index;
+    const a = accounts[index];
+    document.getElementById("profileId").textContent = a.id;
+    document.getElementById("profileName").textContent = a.name;
+    document.getElementById("profileBio").textContent = a.bio;
+    document.getElementById("followers").textContent = a.followers;
+    document.getElementById("following").textContent = a.following;
+    document.getElementById("postCount").textContent = a.posts.length;
+    document.getElementById("profileAvatar").style.setProperty("--g",a.grad);
+    const grid = document.getElementById("postGrid");
+    grid.innerHTML = "";
+    a.posts.forEach((p,postIndex) => {
+      const d = document.createElement("button");
+      d.type = "button";
+      d.className = "post";
+      applyPostVisual(d, p);
+      d.setAttribute("aria-label", `${a.name} 게시물 ${postIndex + 1} 열기`);
+      d.addEventListener("click", () => openPost(currentProfile, postIndex));
+      grid.appendChild(d);
+    });
+    const follow = document.getElementById("followBtn");
+    follow.textContent = "팔로우";
+    follow.style.background = "#6c62d9";
+    follow.style.color = "#fff";
+    show("profileView");
+  }
+
+  document.getElementById("followBtn").addEventListener("click", e => {
+    const btn=e.currentTarget;
+    const isFollowing=btn.textContent==="팔로잉";
+    btn.textContent=isFollowing?"팔로우":"팔로잉";
+    btn.style.background=isFollowing?"#6c62d9":"#efeff1";
+    btn.style.color=isFollowing?"#fff":"#111";
+  });
+
+
+
+
+  let currentPostIndex = 0;
+  let currentPostContext = "main";
+  let currentAltOwner = 2;
+  let currentNestedOwner = 2;
+  let altSocialMode = "followers";
+
+  // 숨겨진 계정에서 뒤로 갈 때 원래 들어온 화면으로 돌아가기 위한 상태
+  let privateReturnSource = "mainFollowing";
+  let nestedReturnSource = "altFollowing";
+  let currentPostLikeBase = 0;
+  let postLiked = false;
+  let postSaved = false;
+
+  // 게시물 캡션은 각 계정 데이터에 포함
+
+
+  function renderPostComments(commentList){
+    const box = document.getElementById("postComments");
+    box.innerHTML = "";
+
+    const comments = Array.isArray(commentList) ? commentList.slice(0,2) : [];
+
+    comments.forEach(comment => {
+      if(!comment || !comment.text) return;
+
+      const row = document.createElement("div");
+      row.className = "post-comment";
+
+      const user = document.createElement("b");
+      user.textContent = comment.user || "user";
+
+      const text = document.createElement("span");
+      text.textContent = comment.text;
+
+      row.appendChild(user);
+      row.appendChild(text);
+      box.appendChild(row);
+    });
+
+    box.style.display = comments.length ? "block" : "none";
+  }
+
+  function openPost(profileIndex, postIndex){
+    currentProfile = profileIndex;
+    currentPostIndex = postIndex;
+    currentPostContext = "main";
+    currentPostLikeBase = 1284 + profileIndex * 913 + postIndex * 137;
+
+    const a = accounts[profileIndex];
+    const postColor = a.posts[postIndex % a.posts.length];
+
+    document.getElementById("postDetailId").textContent = a.id;
+    document.getElementById("postDetailName").textContent = a.name;
+    document.getElementById("postCaptionId").textContent = a.id;
+    const captionText = a.captions[postIndex] || "";
+    document.getElementById("postCaptionText").textContent = captionText;
+    document.querySelector(".post-caption").style.display = captionText ? "block" : "none";
+    document.getElementById("postDetailAvatar").style.setProperty("--g", a.grad);
+
+    const image = document.getElementById("postDetailImage");
+    applyPostVisual(image, postColor);
+    image.classList.remove("liked");
+
+    postLiked = false;
+    postSaved = false;
+    const likeBtn = document.getElementById("postLikeBtn");
+    const saveBtn = document.getElementById("postSaveBtn");
+    likeBtn.textContent = "♡";
+    likeBtn.classList.remove("active");
+    saveBtn.textContent = "⌑";
+    saveBtn.classList.remove("active");
+    document.getElementById("postLikes").textContent = `좋아요 ${currentPostLikeBase}개`;
+    document.getElementById("postDate").textContent = (a.dates && a.dates[postIndex]) || "방금 전";
+    renderPostComments((a.comments && a.comments[postIndex]) || []);
+
+    show("postView");
+  }
+
+  function openAltPost(ownerIndex, postIndex){
+    const p = privateAccounts[ownerIndex];
+    if(!p) return;
+
+    currentAltOwner = ownerIndex;
+    currentPostIndex = postIndex;
+    currentPostContext = "alt";
+    currentPostLikeBase = 47 + ownerIndex * 19 + postIndex * 11;
+
+    const postValue = p.posts[postIndex % p.posts.length];
+
+    document.getElementById("postDetailId").textContent = p.id;
+    document.getElementById("postDetailName").textContent = p.name;
+    document.getElementById("postCaptionId").textContent = p.id;
+    const captionText = (p.captions && p.captions[postIndex]) || "";
+    document.getElementById("postCaptionText").textContent = captionText;
+    document.querySelector(".post-caption").style.display = captionText ? "block" : "none";
+    document.getElementById("postDetailAvatar").style.setProperty("--g", p.grad);
+
+    const image = document.getElementById("postDetailImage");
+    applyPostVisual(image, postValue);
+    image.classList.remove("liked");
+
+    postLiked = false;
+    postSaved = false;
+
+    const likeBtn = document.getElementById("postLikeBtn");
+    const saveBtn = document.getElementById("postSaveBtn");
+
+    likeBtn.textContent = "♡";
+    likeBtn.classList.remove("active");
+    saveBtn.textContent = "⌑";
+    saveBtn.classList.remove("active");
+
+    document.getElementById("postLikes").textContent = `좋아요 ${currentPostLikeBase}개`;
+    document.getElementById("postDate").textContent = (p.dates && p.dates[postIndex]) || "방금 전";
+    renderPostComments((p.comments && p.comments[postIndex]) || []);
+
+    show("postView");
+  }
+
+  function openNestedPost(ownerIndex, postIndex){
+    const p = nestedPrivateAccounts[ownerIndex];
+    if(!p) return;
+    currentNestedOwner = ownerIndex;
+    currentPostIndex = postIndex;
+    currentPostContext = "nested";
+    currentPostLikeBase = 23 + postIndex * 9;
+    document.getElementById("postDetailId").textContent = p.id;
+    document.getElementById("postDetailName").textContent = p.name;
+    document.getElementById("postCaptionId").textContent = p.id;
+    const captionText = (p.captions && p.captions[postIndex]) || "";
+    document.getElementById("postCaptionText").textContent = captionText;
+    document.querySelector(".post-caption").style.display = captionText ? "block" : "none";
+    document.getElementById("postDetailAvatar").style.setProperty("--g", p.grad);
+    const image = document.getElementById("postDetailImage");
+    applyPostVisual(image, p.posts[postIndex]);
+    image.classList.remove("liked");
+    postLiked = false;
+    postSaved = false;
+    const likeBtn = document.getElementById("postLikeBtn");
+    const saveBtn = document.getElementById("postSaveBtn");
+    likeBtn.textContent = "♡";
+    likeBtn.classList.remove("active");
+    saveBtn.textContent = "⌑";
+    saveBtn.classList.remove("active");
+    document.getElementById("postLikes").textContent = `좋아요 ${currentPostLikeBase}개`;
+    document.getElementById("postDate").textContent = (p.dates && p.dates[postIndex]) || "방금 전";
+    renderPostComments((p.comments && p.comments[postIndex]) || []);
+    show("postView");
+  }
+
+  document.getElementById("postBack").addEventListener("click", () => {
+    if(currentPostContext === "nested"){
+      openNestedProfile(currentNestedOwner);
+    }else if(currentPostContext === "alt"){
+      openPrivateProfile(currentAltOwner);
+    }else{
+      openProfile(currentProfile);
+    }
+  });
+
+  document.getElementById("postLikeBtn").addEventListener("click", () => {
+    postLiked = !postLiked;
+    const btn = document.getElementById("postLikeBtn");
+    btn.textContent = postLiked ? "♥" : "♡";
+    btn.classList.toggle("active", postLiked);
+    document.getElementById("postLikes").textContent = `좋아요 ${currentPostLikeBase + (postLiked ? 1 : 0)}개`;
+  });
+
+  document.getElementById("postSaveBtn").addEventListener("click", () => {
+    postSaved = !postSaved;
+    const btn = document.getElementById("postSaveBtn");
+    btn.textContent = postSaved ? "▣" : "⌑";
+    btn.classList.toggle("active", postSaved);
+  });
+
+  document.getElementById("postDetailImage").addEventListener("dblclick", () => {
+    if(!postLiked){
+      postLiked = true;
+      const btn = document.getElementById("postLikeBtn");
+      btn.textContent = "♥";
+      btn.classList.add("active");
+      document.getElementById("postLikes").textContent = `좋아요 ${currentPostLikeBase + 1}개`;
+    }
+    const image = document.getElementById("postDetailImage");
+    image.classList.remove("liked");
+    void image.offsetWidth;
+    image.classList.add("liked");
+    setTimeout(() => image.classList.remove("liked"), 600);
+  });
+
+
+  const pixDmThreads = accounts.map((account, index) => {
+    const starters = [
+      [],
+      [{from:"them", text:"안녕하세요."}],
+      [],
+      [{from:"them", text:"뭐임"}],
+      []
+    ];
+    return starters[index] || [];
+  });
+
+  let currentDmProfile = 0;
+
+  function renderPixDm(){
+    const account = accounts[currentDmProfile];
+    const scroll = document.getElementById("pixDmScroll");
+    scroll.innerHTML = "";
+
+    const time = document.createElement("div");
+    time.className = "pix-dm-time";
+    time.textContent = "오늘";
+    scroll.appendChild(time);
+
+    const thread = pixDmThreads[currentDmProfile];
+
+    if(thread.length === 0){
+      const empty = document.createElement("div");
+      empty.style.cssText = "text-align:center;color:#aaa;font-size:11px;padding:22px 10px;";
+      empty.textContent = "아직 주고받은 메시지가 없습니다.";
+      scroll.appendChild(empty);
+    }else{
+      thread.forEach(msg => {
+        const bubble = document.createElement("div");
+        bubble.className = "pix-dm-bubble" + (msg.from === "me" ? " me" : "");
+        bubble.textContent = msg.text;
+        scroll.appendChild(bubble);
+      });
+    }
+
+    requestAnimationFrame(() => {
+      scroll.scrollTop = scroll.scrollHeight;
+    });
+  }
+
+  function openPixDm(profileIndex){
+    currentDmProfile = profileIndex;
+    const account = accounts[profileIndex];
+
+    document.getElementById("pixDmHeader").textContent = account.id;
+    document.getElementById("pixDmName").textContent = account.name;
+    document.getElementById("pixDmId").textContent = "@" + account.id;
+    document.getElementById("pixDmAvatar").style.setProperty("--g", account.grad);
+
+    renderPixDm();
+    show("pixDmView");
+  }
+
+  document.getElementById("pixMessageBtn").addEventListener("click", () => {
+    openPixDm(currentProfile);
+  });
+
+  document.getElementById("pixDmBack").addEventListener("click", () => {
+    openProfile(currentDmProfile);
+  });
+
+  document.getElementById("pixDmForm").addEventListener("submit", e => {
+    e.preventDefault();
+
+    const input = document.getElementById("pixDmInput");
+    const text = input.value.trim();
+    if(!text) return;
+
+    pixDmThreads[currentDmProfile].push({
+      from:"me",
+      text
+    });
+
+    input.value = "";
+    renderPixDm();
+  });
+
+  document.getElementById("followersBtn").addEventListener("click", () => openSocial("followers"));
+  document.getElementById("followingBtn").addEventListener("click", () => openSocial("following"));
+
+  function openNestedProfile(ownerIndex, source=null){
+    const p = nestedPrivateAccounts[ownerIndex];
+    if(!p) return;
+    currentNestedOwner = ownerIndex;
+    if(source) nestedReturnSource = source;
+    document.getElementById("nestedProfileId").textContent = p.id;
+    document.getElementById("nestedName").textContent = p.name;
+    document.getElementById("nestedBio").textContent = p.bio;
+    document.getElementById("nestedFollowers").textContent = p.followers;
+    document.getElementById("nestedFollowing").textContent = p.following;
+    document.getElementById("nestedPostCount").textContent = p.posts.length;
+    document.getElementById("nestedAvatar").style.setProperty("--g", p.grad);
+    const grid = document.getElementById("nestedPostGrid");
+    grid.innerHTML = "";
+    p.posts.forEach((postValue, i) => {
+      const d = document.createElement("button");
+      d.type = "button";
+      d.className = "post";
+      d.setAttribute("aria-label", `${p.name} 게시물 ${i + 1} 열기`);
+      applyPostVisual(d, postValue);
+      d.addEventListener("click", () => openNestedPost(ownerIndex, i));
+      grid.appendChild(d);
+    });
+    show("nestedProfileView");
+  }
+
+  function openPrivateProfile(ownerIndex, source=null){
+    const p = privateAccounts[ownerIndex];
+    if(!p) return;
+    currentAltOwner = ownerIndex;
+    if(source) privateReturnSource = source;
+
+    document.getElementById("privateProfileId").textContent = p.id;
+    document.getElementById("privateName").textContent = p.name;
+    document.getElementById("privateBio").textContent = p.bio;
+    document.getElementById("privateFollowers").textContent = p.followers;
+    document.getElementById("privateFollowing").textContent = p.following;
+    document.getElementById("privatePostCount").textContent = p.posts.length;
+    document.getElementById("privateAvatar").style.setProperty("--g", p.grad);
+
+    const grid = document.getElementById("privatePostGrid");
+    grid.innerHTML = "";
+    p.posts.forEach((postValue, i) => {
+      const d = document.createElement("button");
+      d.type = "button";
+      d.className = "post";
+      d.setAttribute("aria-label", `${p.name} 게시물 ${i + 1} 열기`);
+      applyPostVisual(d, postValue);
+      d.addEventListener("click", () => openAltPost(ownerIndex, i));
+      grid.appendChild(d);
+    });
+
+    show("privateProfileView");
+  }
+
+  function openAltSocial(mode){
+    altSocialMode = mode;
+    const owner = currentAltOwner;
+    const p = privateAccounts[owner];
+    if(!p) return;
+    document.getElementById("socialTitle").textContent = mode === "followers" ? "팔로워" : "팔로잉";
+    const list = document.getElementById("socialList");
+    list.innerHTML = "";
+    const offset = (owner + (mode === "followers" ? 1 : 3)) % socialPool.length;
+    const count = mode === "followers" ? 6 : 7;
+    for(let i=0;i<count;i++){
+      const person = socialPool[(offset+i)%socialPool.length];
+      const row = document.createElement("div");
+      row.className = "social-row";
+      row.innerHTML = `
+        <div class="social-avatar" style="--g:${person.grad}"></div>
+        <div class="social-copy"><b>${person.id}</b><span>${person.name}</span></div>
+        <button type="button" class="social-follow">팔로우</button>`;
+      row.querySelector("button").addEventListener("click", e => {
+        const b=e.currentTarget;
+        const on=b.textContent==="팔로잉";
+        b.textContent=on?"팔로우":"팔로잉";
+        b.style.background=on?"#0095f6":"#efeff1";
+        b.style.color=on?"#fff":"#111";
+      });
+      list.appendChild(row);
+    }
+    if(mode === "following" && nestedPrivateAccounts[owner]){
+      const nested = nestedPrivateAccounts[owner];
+      const row = document.createElement("div");
+      row.className = "social-row clickable";
+      row.innerHTML = `
+        <div class="social-avatar" style="--g:${nested.grad}"></div>
+        <div class="social-copy"><b>${nested.id}</b><span>${nested.name}</span></div>
+        <button type="button" class="social-follow">팔로우</button>`;
+      const followBtn = row.querySelector("button");
+      followBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        const on = followBtn.textContent === "팔로잉";
+        followBtn.textContent = on ? "팔로우" : "팔로잉";
+        followBtn.style.background = on ? "#0095f6" : "#efeff1";
+        followBtn.style.color = on ? "#fff" : "#111";
+      });
+      row.addEventListener("click", () => openNestedProfile(owner, "altFollowing"));
+      list.appendChild(row);
+    }
+    document.getElementById("socialBack").onclick = () => openPrivateProfile(owner);
+    show("socialListView");
+  }
+
+  function openSocial(mode){
+    socialMode = mode;
+    document.getElementById("socialBack").onclick = () => show("profileView");
+    document.getElementById("socialTitle").textContent = mode === "followers" ? "팔로워" : "팔로잉";
+    const list = document.getElementById("socialList");
+    list.innerHTML = "";
+    const offset = (currentProfile + (mode === "followers" ? 0 : 2)) % socialPool.length;
+    const count = mode === "followers" ? 7 : 6;
+    for(let i=0;i<count;i++){
+      const p = socialPool[(offset+i)%socialPool.length];
+      const row=document.createElement("div");
+      row.className="social-row";
+      row.innerHTML=`
+        <div class="social-avatar" style="--g:${p.grad}"></div>
+        <div class="social-copy"><b>${p.id}</b><span>${p.name}</span></div>
+        <button type="button" class="social-follow">팔로우</button>`;
+      row.querySelector("button").addEventListener("click", e => {
+        const b=e.currentTarget;
+        const on=b.textContent==="팔로잉";
+        b.textContent=on?"팔로우":"팔로잉";
+        b.style.background=on?"#0095f6":"#efeff1";
+        b.style.color=on?"#fff":"#111";
+      });
+      list.appendChild(row);
+    }
+
+    // 서이준/우도준 팔로잉 목록 최하단의 별도 계정
+    if(mode === "following" && privateAccounts[currentProfile]){
+      const p = privateAccounts[currentProfile];
+      const row = document.createElement("div");
+      row.className = "social-row clickable";
+      row.innerHTML = `
+        <div class="social-avatar" style="--g:${p.grad}"></div>
+        <div class="social-copy">
+          <b>${p.id}</b>
+          <span>${p.name}</span>
+        </div>
+        <button type="button" class="social-follow">팔로우</button>
+      `;
+      const followBtn = row.querySelector("button");
+      followBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        const on = followBtn.textContent === "팔로잉";
+        followBtn.textContent = on ? "팔로우" : "팔로잉";
+        followBtn.style.background = on ? "#0095f6" : "#efeff1";
+        followBtn.style.color = on ? "#fff" : "#111";
+      });
+      row.addEventListener("click", () => openPrivateProfile(currentProfile, "mainFollowing"));
+      list.appendChild(row);
+    }
+
+    show("socialListView");
+  }
+})();
+</script>
+</body>
+</html>
