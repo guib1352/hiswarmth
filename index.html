@@ -2028,16 +2028,7 @@ https://github.com/guib1352/hiswarmth/blob/main/Seo9.webp|개빡셈|23년 3월 9
   });
 
 
-  const pixDmThreads = accounts.map((account, index) => {
-    const starters = [
-      [],
-      [{from:"them", text:"안녕하세요."}],
-      [],
-      [{from:"them", text:"뭐임"}],
-      []
-    ];
-    return starters[index] || [];
-  });
+  const pixDmThreads = accounts.map(() => []);
 
   let currentDmProfile = 0;
 
